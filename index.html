@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pirelli Track Day 19.06.2026</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+p {
+    text-align: center;
+    color: #555;
+    margin-bottom: 30px;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.photo {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.photo:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+}
+
+.photo img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+    background: #ddd;
+    cursor: pointer;
+}
+
+.caption {
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: #333;
+    word-break: break-word;
+}
+
+/* Okno dużego zdjęcia */
+.lightbox {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.93);
+}
+
+.lightbox.open {
+    display: block;
+}
+
+.lightbox-image {
+    max-width: 92%;
+    max-height: 84%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.close-button,
+.prev-button,
+.next-button {
+    position: absolute;
+    color: white;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 10001;
+    line-height: 1;
+}
+
+.close-button {
+    top: 18px;
+    right: 30px;
+    font-size: 46px;
+    font-weight: bold;
+}
+
+.prev-button,
+.next-button {
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 72px;
+    font-weight: bold;
+    padding: 25px;
+}
+
+.prev-button {
+    left: 20px;
+}
+
+.next-button {
+    right: 20px;
+}
+
+.close-button:hover,
+.prev-button:hover,
+.next-button:hover {
+    color: #ffdd00;
+}
+
+.original-link {
+    position: absolute;
+    top: 28px;
+    left: 30px;
+    color: white;
+    font-size: 15px;
+    text-decoration: none;
+    border: 1px solid white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    z-index: 10001;
+}
+
+.original-link:hover {
+    background: white;
+    color: black;
+}
+
+.counter {
+    position: absolute;
+    bottom: 22px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 16px;
+    padding: 0 20px;
+}
+
+@media (max-width: 700px) {
+    body {
+        padding: 12px;
+    }
+
+    .gallery {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+    }
+
+    .photo img {
+        height: 150px;
+    }
+
+    .caption {
+        font-size: 11px;
+    }
+
+    .prev-button,
+    .next-button {
+        font-size: 42px;
+        padding: 12px;
+    }
+
+    .prev-button {
+        left: 4px;
+    }
+
+    .next-button {
+        right: 4px;
+    }
+
+    .close-button {
+        font-size: 36px;
+        right: 16px;
+        top: 16px;
+    }
+
+    .original-link {
+        left: 16px;
+        top: 22px;
+        font-size: 13px;
+        padding: 7px 10px;
+    }
+
+    .lightbox-image {
+        max-width: 96%;
+        max-height: 80%;
+    }
+}
+</style>
+</head>
+<body>
+
+<h1>Pirelli Track Day - 19.06.2026</h1>
+<p>Kliknij zdjęcie, aby otworzyć podgląd. Użyj strzałek na ekranie albo klawiszy ← i →.</p>
+
+<div class="gallery" id="gallery"></div>
+
+<!-- Okno dużego zdjęcia -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+    <button class="close-button" id="closeButton" type="button" aria-label="Zamknij">&times;</button>
+
+    <a class="original-link" id="originalLink" href="#" target="_blank" rel="noopener">
+        Otwórz oryginał
+    </a>
+
+    <button class="prev-button" id="prevButton" type="button" aria-label="Poprzednie zdjęcie">&#10094;</button>
+
+    <img class="lightbox-image" id="lightboxImage" src="" alt="">
+
+    <button class="next-button" id="nextButton" type="button" aria-label="Następne zdjęcie">&#10095;</button>
+
+    <div class="counter" id="counter"></div>
+</div>
+
+<script>
+const totalPhotos = 250;
+let currentPhoto = 1;
+
+const gallery = document.getElementById("gallery");
+const lightbox = document.getElementById("lightbox");
+const lightboxImage = document.getElementById("lightboxImage");
+const originalLink = document.getElementById("originalLink");
+const counter = document.getElementById("counter");
+const closeButton = document.getElementById("closeButton");
+const prevButton = document.getElementById("prevButton");
+const nextButton = document.getElementById("nextButton");
+
+function getFileName(number) {
+    return "19.06.2026 Pirelli Track Day (" + number + ").jpg";
+}
+
+function getFilePath(number) {
+    return "zdjecia/" + encodeURIComponent(getFileName(number));
+}
+
+function createGallery() {
+    for (let i = 1; i <= totalPhotos; i++) {
+        const fileName = getFileName(i);
+        const filePath = getFilePath(i);
+
+        const photoBox = document.createElement("div");
+        photoBox.className = "photo";
+
+        const image = document.createElement("img");
+        image.src = filePath;
+        image.alt = fileName;
+        image.loading = "lazy";
+        image.addEventListener("click", function() {
+            openLightbox(i);
+        });
+
+        const caption = document.createElement("div");
+        caption.className = "caption";
+        caption.textContent = fileName;
+
+        photoBox.appendChild(image);
+        photoBox.appendChild(caption);
+        gallery.appendChild(photoBox);
+    }
+}
+
+function openLightbox(number) {
+    currentPhoto = number;
+    updateLightbox();
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+}
+
+function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+}
+
+function showNextPhoto() {
+    currentPhoto = currentPhoto + 1;
+
+    if (currentPhoto > totalPhotos) {
+        currentPhoto = 1;
+    }
+
+    updateLightbox();
+}
+
+function showPreviousPhoto() {
+    currentPhoto = currentPhoto - 1;
+
+    if (currentPhoto < 1) {
+        currentPhoto = totalPhotos;
+    }
+
+    updateLightbox();
+}
+
+function updateLightbox() {
+    const fileName = getFileName(currentPhoto);
+    const filePath = getFilePath(currentPhoto);
+
+    lightboxImage.src = filePath;
+    lightboxImage.alt = fileName;
+    originalLink.href = filePath;
+    counter.textContent = "Zdjęcie " + currentPhoto + " z " + totalPhotos + " — " + fileName;
+}
+
+closeButton.addEventListener("click", function(event) {
+    event.stopPropagation();
+    closeLightbox();
+});
+
+nextButton.addEventListener("click", function(event) {
+    event.stopPropagation();
+    showNextPhoto();
+});
+
+prevButton.addEventListener("click", function(event) {
+    event.stopPropagation();
+    showPreviousPhoto();
+});
+
+lightboxImage.addEventListener("click", function(event) {
+    event.stopPropagation();
+});
+
+originalLink.addEventListener("click", function(event) {
+    event.stopPropagation();
+});
+
+lightbox.addEventListener("click", function(event) {
+    if (event.target === lightbox) {
+        closeLightbox();
+    }
+});
+
+document.addEventListener("keydown", function(event) {
+    if (!lightbox.classList.contains("open")) {
+        return;
+    }
+
+    if (event.key === "ArrowRight") {
+        event.preventDefault();
+        showNextPhoto();
+    }
+
+    if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        showPreviousPhoto();
+    }
+
+    if (event.key === "Escape") {
+        event.preventDefault();
+        closeLightbox();
+    }
+});
+
+createGallery();
+</script>
+
+</body>
+</html>
